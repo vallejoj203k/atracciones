@@ -25,9 +25,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
+    "prisma": "^6.19.3",
     "zod": "^4.1.13"
-  },
-  "devDependencies": {
-    "prisma": "^6.19.3"
   }
 }

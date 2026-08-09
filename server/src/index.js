@@ -1,6 +1,8 @@
 import { crearApp } from './app.js';
-import { env } from './config/env.js';
+import { env, validarEntornoServidor } from './config/env.js';
 import { prisma } from './lib/prisma.js';
+
+validarEntornoServidor();
 
 const app = crearApp();
 

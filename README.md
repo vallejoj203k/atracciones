@@ -113,12 +113,17 @@ La cámara solo funciona sobre HTTPS o en `localhost`. Para probar desde un celu
 
 El repositorio está preparado para **un solo servicio**: Express sirve la API y también el frontend compilado. Es más barato y evita configurar CORS.
 
-1. Crea un proyecto en Railway y añade el plugin **PostgreSQL**. Railway inyecta `DATABASE_URL` sola.
-2. Conecta este repositorio. `railway.json` ya define:
-   - build: `npm run build` (compila el frontend y genera el cliente de Prisma)
-   - start: `npm run prisma:deploy && npm start` (aplica migraciones pendientes y arranca)
-   - healthcheck: `/api/health`
-3. Configura las variables de entorno mínimas:
+1. **Crea el proyecto y la base.** En Railway: *New Project* → *Deploy from GitHub repo* → este repositorio, rama `main`. Luego *New* → *Database* → *Add PostgreSQL* dentro del mismo proyecto.
+
+2. **Conecta la base al servicio.** Railway **no** inyecta `DATABASE_URL` automáticamente: hay que referenciarla. En el servicio de la app, *Variables* → añade
+
+   ```
+   DATABASE_URL=${{Postgres.DATABASE_URL}}
+   ```
+
+   (si nombraste el servicio de base distinto, usa ese nombre en lugar de `Postgres`).
+
+3. **Añade el resto de variables:**
 
    ```
    NODE_ENV=production
@@ -134,10 +139,17 @@ El repositorio está preparado para **un solo servicio**: Express sirve la API y
 
    El servidor **se niega a arrancar en producción** si `JWT_SECRET` falta o tiene menos de 32 caracteres.
 
-4. La primera vez, ejecuta el seed una sola vez desde la consola de Railway:
-   ```bash
-   npm run seed
-   ```
+4. **Publica un dominio.** *Settings* → *Networking* → *Generate Domain*. La cámara necesita HTTPS y el dominio de Railway ya lo trae.
+
+`railway.json` se encarga del resto en cada despliegue:
+
+- build: `npm run build` — compila el frontend y genera el cliente de Prisma
+- start: `npm run prisma:deploy && npm run seed && npm start` — aplica migraciones pendientes, asegura los datos iniciales y arranca
+- healthcheck: `/api/health`
+
+El seed es idempotente y corre en cada arranque sin efectos: crea la configuración, las atracciones y el administrador solo si no existen, y **nunca** cambia la contraseña de un administrador ya creado. Por eso cambiar `SEED_ADMIN_PASSWORD` después del primer despliegue no tiene efecto; para cambiarla, usa Ajustes dentro de la aplicación.
+
+> **Por qué `vite`, `tailwindcss` y `prisma` están en `dependencies` y no en `devDependencies`:** con `NODE_ENV=production`, npm omite las `devDependencies` al instalar, así que el build se quedaría sin `vite` y el `startCommand` sin el CLI de `prisma`. Ponerlas como dependencias normales hace que el despliegue funcione sin depender de banderas extra como `NPM_CONFIG_INCLUDE=dev`.
 
 Para desplegar frontend y backend por separado, pon `SERVE_WEB=false` en el backend y `VITE_API_URL=https://tu-api.railway.app` al compilar el frontend, y añade el dominio del frontend a `CORS_ORIGIN`.
 
