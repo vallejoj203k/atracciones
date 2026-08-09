@@ -29,13 +29,7 @@ const isProduction = nodeEnv === 'production';
 
 const jwtSecret = process.env.JWT_SECRET || (isProduction ? '' : 'dev-secret-no-usar-en-produccion');
 
-if (isProduction && jwtSecret.length < 32) {
-  throw new Error(
-    'JWT_SECRET es obligatorio en produccion y debe tener al menos 32 caracteres. ' +
-      'Generalo con: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"'
-  );
-}
-
+// Todo lo que toca la base necesita esto, incluido el seed.
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL no esta definida. Revisa tu archivo .env o las variables del entorno.');
 }
@@ -69,4 +63,21 @@ export const env = {
       baseUrl: process.env.WOMPI_BASE_URL || 'https://production.wompi.co/v1',
     },
   },
+};
+
+/**
+ * Comprobaciones que solo aplican al proceso que atiende peticiones.
+ *
+ * Va aparte del cuerpo del modulo a proposito: el seed y las tareas de
+ * mantenimiento tambien importan `env` y no firman tokens, asi que un
+ * JWT_SECRET ausente no debe impedir que se ejecuten. El unico que se niega a
+ * arrancar sin un secreto fuerte es el servidor HTTP.
+ */
+export const validarEntornoServidor = () => {
+  if (env.isProduction && env.jwtSecret.length < 32) {
+    throw new Error(
+      'JWT_SECRET es obligatorio en produccion y debe tener al menos 32 caracteres. ' +
+        'Generalo con: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"'
+    );
+  }
 };
