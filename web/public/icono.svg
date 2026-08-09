@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="96" fill="#0f172a" />
+  <!-- Montaña del mirador -->
+  <path d="M96 352 L200 208 L272 300 L320 240 L416 352 Z" fill="#38bdf8" />
+  <circle cx="352" cy="150" r="34" fill="#fbbf24" />
+  <!-- Marcas de QR -->
+  <rect x="120" y="392" width="40" height="40" rx="8" fill="#e2e8f0" />
+  <rect x="176" y="392" width="40" height="40" rx="8" fill="#e2e8f0" />
+  <rect x="232" y="392" width="40" height="40" rx="8" fill="#e2e8f0" />
+  <rect x="352" y="392" width="40" height="40" rx="8" fill="#38bdf8" />
+</svg>

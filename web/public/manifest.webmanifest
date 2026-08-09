@@ -1,0 +1,19 @@
+{
+  "name": "Mirador · Control de atracciones",
+  "short_name": "Mirador",
+  "description": "Recarga de puntos y control de acceso por manilla QR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/icono.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

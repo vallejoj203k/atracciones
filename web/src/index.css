@@ -1,0 +1,108 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-marca-50: #f0f9ff;
+  --color-marca-100: #e0f2fe;
+  --color-marca-200: #bae6fd;
+  --color-marca-300: #7dd3fc;
+  --color-marca-400: #38bdf8;
+  --color-marca-500: #0ea5e9;
+  --color-marca-600: #0284c7;
+  --color-marca-700: #0369a1;
+  --color-marca-800: #075985;
+  --color-marca-900: #0c4a6e;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: #0f172a;
+  color: #e2e8f0;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  /* Evita el rebote elastico en iOS cuando la estacion esta en pantalla completa. */
+  overscroll-behavior-y: none;
+}
+
+/* Las estaciones se manejan con guantes o con prisa: nada de textos
+   seleccionables por accidente al tocar. */
+button,
+label {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* El lector html5-qrcode inyecta su propia UI; se oculta lo que sobra para
+   dejar solo el video. */
+#lector-qr video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  border-radius: 1rem;
+}
+
+#lector-qr img[alt='Info icon'],
+#lector-qr__dashboard_section_csr span,
+#lector-qr__status_span {
+  display: none !important;
+}
+
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .no-imprimir {
+    display: none !important;
+  }
+}
+
+@keyframes pulso-exito {
+  0% {
+    box-shadow: 0 0 0 0 rgb(34 197 94 / 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 32px rgb(34 197 94 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(34 197 94 / 0);
+  }
+}
+
+@keyframes sacudida {
+  10%,
+  90% {
+    transform: translateX(-2px);
+  }
+  20%,
+  80% {
+    transform: translateX(4px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-8px);
+  }
+  40%,
+  60% {
+    transform: translateX(8px);
+  }
+}
+
+.animar-exito {
+  animation: pulso-exito 1s ease-out;
+}
+
+.animar-error {
+  animation: sacudida 0.5s ease-in-out;
+}
