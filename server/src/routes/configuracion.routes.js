@@ -25,14 +25,19 @@ configuracionRouter.get('/', async (_req, res) => {
 });
 
 const actualizarSchema = z.object({
-  nombreNegocio: z.string().trim().min(1).max(120).optional(),
-  moneda: z.string().trim().length(3).toUpperCase().optional(),
-  precioPunto: z.coerce.number().min(0).max(100_000_000).optional(),
-  cooldownSegundosDefault: z.coerce.number().int().min(0).max(3600).optional(),
-  pagoDigitalTitular: z.string().trim().max(120).nullish(),
-  pagoDigitalEntidad: z.string().trim().max(120).nullish(),
-  pagoDigitalNumero: z.string().trim().max(60).nullish(),
-  pagoDigitalInstrucciones: z.string().trim().max(500).nullish(),
+  nombreNegocio: z.string().trim().min(1, 'No puede quedar vacio').max(120, 'Maximo 120 caracteres').optional(),
+  moneda: z.string().trim().length(3, 'Usa el codigo de 3 letras, ej. COP').toUpperCase().optional(),
+  precioPunto: z.coerce.number().min(0, 'No puede ser negativo').max(100_000_000, 'Precio demasiado alto').optional(),
+  cooldownSegundosDefault: z.coerce
+    .number()
+    .int()
+    .min(0, 'No puede ser negativo')
+    .max(3600, 'Maximo 3600 segundos (1 hora)')
+    .optional(),
+  pagoDigitalTitular: z.string().trim().max(120, 'Maximo 120 caracteres').nullish(),
+  pagoDigitalEntidad: z.string().trim().max(120, 'Maximo 120 caracteres').nullish(),
+  pagoDigitalNumero: z.string().trim().max(60, 'Maximo 60 caracteres').nullish(),
+  pagoDigitalInstrucciones: z.string().trim().max(500, 'Maximo 500 caracteres').nullish(),
   confirmacionDigitalManual: z.boolean().optional(),
 });
 

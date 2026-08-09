@@ -17,6 +17,19 @@ import { etiquetaRol, fechaHora } from '../../lib/formato.js';
 const VACIO = { nombre: '', username: '', password: '', rol: 'OPERADOR', atraccionId: '', activo: true };
 
 /**
+ * El backend solo acepta letras sin tildes, numeros, punto, guion y guion bajo.
+ * En vez de dejar que el trabajador escriba "José Pérez" y reciba un error al
+ * guardar, se corrige mientras teclea: "jose.perez".
+ */
+const normalizarUsername = (valor) =>
+  valor
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, '.')
+    .replace(/[^a-z0-9._-]/g, '');
+
+/**
  * Gestion de trabajadores. Cada operador se ata a una atraccion: su login solo
  * abre la estacion de esa atraccion, no puede registrar accesos en otra.
  */
@@ -127,11 +140,16 @@ export const Usuarios = () => {
                 />
               </Campo>
 
-              <Campo etiqueta="Usuario" requerido ayuda="Sin espacios ni tildes">
+              <Campo
+                etiqueta="Usuario"
+                requerido
+                ayuda="Con el que inicia sesion. Las tildes y espacios se corrigen solos."
+              >
                 <Entrada
                   value={formulario.username}
-                  onChange={(e) => setFormulario((f) => ({ ...f, username: e.target.value.toLowerCase() }))}
+                  onChange={(e) => setFormulario((f) => ({ ...f, username: normalizarUsername(e.target.value) }))}
                   required
+                  minLength={3}
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}

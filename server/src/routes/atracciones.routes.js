@@ -20,12 +20,17 @@ atraccionesRouter.get('/', async (_req, res) => {
 });
 
 const crearSchema = z.object({
-  nombre: z.string().trim().min(2).max(80),
-  descripcion: z.string().trim().max(500).optional(),
-  costoPuntos: z.coerce.number().int().min(1).max(50).default(1),
-  cooldownSegundos: z.coerce.number().int().min(0).max(3600).optional(),
+  nombre: z.string().trim().min(2, 'Escribe al menos 2 caracteres').max(80, 'Maximo 80 caracteres'),
+  descripcion: z.string().trim().max(500, 'Maximo 500 caracteres').optional(),
+  costoPuntos: z.coerce.number().int().min(1, 'Minimo 1 punto').max(50, 'Maximo 50 puntos').default(1),
+  cooldownSegundos: z.coerce
+    .number()
+    .int()
+    .min(0, 'No puede ser negativo')
+    .max(3600, 'Maximo 3600 segundos (1 hora)')
+    .optional(),
   activa: z.boolean().default(true),
-  orden: z.coerce.number().int().min(0).default(0),
+  orden: z.coerce.number().int().min(0, 'No puede ser negativo').default(0),
 });
 
 // No hay limite de 3 atracciones: agregar una cuarta es solo crear un registro

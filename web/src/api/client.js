@@ -25,6 +25,49 @@ export const alPerderSesion = (fn) => {
   return () => oyentesSesion.delete(fn);
 };
 
+// Nombres de campo tal como los ve el trabajador en el formulario. Sin esto,
+// un error de validacion diria "username" y en pantalla la etiqueta es "Usuario".
+const ETIQUETAS_CAMPO = {
+  nombre: 'Nombre',
+  username: 'Usuario',
+  password: 'Contrasena',
+  passwordActual: 'Contrasena actual',
+  passwordNueva: 'Nueva contrasena',
+  rol: 'Rol',
+  atraccionId: 'Atraccion asignada',
+  codigo: 'Codigo',
+  codigoManilla: 'Codigo de la manilla',
+  puntos: 'Puntos',
+  metodoPago: 'Metodo de pago',
+  referenciaPago: 'Referencia del pago',
+  nombreVisitante: 'Nombre del visitante',
+  cantidad: 'Cantidad',
+  descripcion: 'Descripcion',
+  costoPuntos: 'Puntos por acceso',
+  cooldownSegundos: 'Cortesia',
+  cooldownSegundosDefault: 'Cortesia por defecto',
+  precioPunto: 'Precio por punto',
+  nombreNegocio: 'Nombre del negocio',
+};
+
+/**
+ * El backend responde "Datos invalidos" con la lista de campos que fallaron.
+ * Mostrar solo el mensaje general deja al usuario adivinando cual corregir,
+ * asi que se arma un texto que nombre el campo y el motivo.
+ */
+const componerMensaje = (mensaje, detalles) => {
+  if (!Array.isArray(detalles) || detalles.length === 0) return mensaje;
+
+  const lista = detalles
+    .map(({ campo, mensaje: motivo }) => {
+      const etiqueta = ETIQUETAS_CAMPO[campo] ?? campo;
+      return etiqueta === '(raiz)' ? motivo : `${etiqueta}: ${motivo}`;
+    })
+    .join(' · ');
+
+  return `${mensaje} — ${lista}`;
+};
+
 const construirUrl = (ruta, params) => {
   const url = `${BASE}/api${ruta}`;
   if (!params) return url;
@@ -75,7 +118,7 @@ export const api = async (ruta, { method = 'GET', body, params, signal } = {}) =
     throw new ErrorApi(
       respuesta.status,
       error.code ?? 'ERROR',
-      error.message ?? `Error ${respuesta.status}`,
+      componerMensaje(error.message ?? `Error ${respuesta.status}`, error.detalles),
       error.detalles
     );
   }

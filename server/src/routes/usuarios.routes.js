@@ -33,17 +33,17 @@ usuariosRouter.get('/', async (_req, res) => {
 });
 
 const baseSchema = z.object({
-  nombre: z.string().trim().min(2).max(120),
+  nombre: z.string().trim().min(2, 'Escribe al menos 2 caracteres').max(120, 'Maximo 120 caracteres'),
   username: z
     .string()
     .trim()
     .toLowerCase()
-    .min(3)
-    .max(40)
-    .regex(/^[a-z0-9._-]+$/, 'Solo letras, numeros, punto, guion y guion bajo'),
+    .min(3, 'Minimo 3 caracteres')
+    .max(40, 'Maximo 40 caracteres')
+    .regex(/^[a-z0-9._-]+$/, 'Solo letras sin tildes, numeros, punto, guion y guion bajo (sin espacios)'),
   password: z.string().min(8, 'Minimo 8 caracteres'),
-  rol: z.enum(['ADMIN', 'RECEPCION', 'OPERADOR']),
-  atraccionId: z.string().uuid().nullish(),
+  rol: z.enum(['ADMIN', 'RECEPCION', 'OPERADOR'], { message: 'Elige un rol valido' }),
+  atraccionId: z.string().uuid('Selecciona una atraccion de la lista').nullish(),
   activo: z.boolean().default(true),
 });
 
