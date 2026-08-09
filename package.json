@@ -1,0 +1,25 @@
+{
+  "name": "mirador-atracciones",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistema de gestion de atracciones por manillas QR y puntos para mirador turistico",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:server": "npm run dev -w server",
+    "dev:web": "npm run dev -w web",
+    "build": "npm run build -w web && npm run build -w server",
+    "start": "npm run start -w server",
+    "prisma:generate": "npm run prisma:generate -w server",
+    "prisma:migrate": "npm run prisma:migrate -w server",
+    "prisma:deploy": "npm run prisma:deploy -w server",
+    "seed": "npm run seed -w server",
+    "lint": "npm run lint --workspaces --if-present"
+  }
+}

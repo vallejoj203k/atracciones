@@ -1,0 +1,240 @@
+// Sistema de gestion de atracciones - Mirador
+//
+// Reglas de negocio que este esquema materializa:
+//  - Una manilla es un codigo QR unico con un saldo de puntos.
+//  - Cada uso de una atraccion descuenta el costo en puntos de esa atraccion
+//    (por defecto 1). El campo costoPuntos existe para poder diferenciar
+//    precios por atraccion en el futuro sin migrar la estructura.
+//  - Toda recarga y todo uso quedan atados al usuario que los ejecuto,
+//    para trazabilidad.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  ADMIN
+  RECEPCION
+  OPERADOR
+}
+
+enum EstadoManilla {
+  ACTIVA
+  INACTIVA
+}
+
+enum MetodoPago {
+  EFECTIVO
+  DIGITAL
+}
+
+enum EstadoRecarga {
+  PENDIENTE
+  CONFIRMADA
+  ANULADA
+}
+
+/// Origen del codigo de una manilla: generado por el sistema (para imprimir
+/// stickers) o registrado a partir de una manilla que ya venia preimpresa.
+enum OrigenCodigo {
+  GENERADO
+  PREIMPRESO
+}
+
+model Usuario {
+  id           String    @id @default(uuid())
+  nombre       String
+  username     String    @unique
+  passwordHash String
+  rol          Rol
+  activo       Boolean   @default(true)
+  ultimoAcceso DateTime?
+
+  /// Solo aplica al rol OPERADOR: la atraccion cuya estacion puede operar.
+  atraccionId String?
+  atraccion   Atraccion? @relation(fields: [atraccionId], references: [id], onDelete: SetNull)
+
+  recargasRegistradas Recarga[]  @relation("RecargaRegistradaPor")
+  recargasConfirmadas Recarga[]  @relation("RecargaConfirmadaPor")
+  manillasCreadas     Manilla[]  @relation("ManillaCreadaPor")
+  usosRegistrados     Uso[]
+  auditoria           AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([rol])
+  @@index([atraccionId])
+}
+
+model Atraccion {
+  id          String  @id @default(uuid())
+  nombre      String  @unique
+  descripcion String?
+
+  /// Cuantos puntos descuenta un acceso. Configurable por atraccion para
+  /// dejar la puerta abierta a precios diferenciados.
+  costoPuntos Int     @default(1)
+
+  /// Segundos durante los cuales un re-escaneo de la misma manilla en esta
+  /// atraccion NO vuelve a descontar puntos (evita el doble cobro por
+  /// escaneo accidental). 0 desactiva la proteccion.
+  cooldownSegundos Int @default(60)
+
+  activa Boolean @default(true)
+  orden  Int     @default(0)
+
+  usos       Uso[]
+  operadores Usuario[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([activa])
+}
+
+model Manilla {
+  id String @id @default(uuid())
+
+  /// Contenido exacto del QR impreso en la manilla. Es la clave por la que
+  /// se busca al escanear, por eso va indexada y en mayusculas normalizadas.
+  codigo String @unique
+
+  saldoPuntos Int           @default(0)
+  estado      EstadoManilla @default(ACTIVA)
+  origen      OrigenCodigo  @default(GENERADO)
+
+  /// Opcionales: el flujo normal es anonimo, pero recepcion puede anotar un
+  /// nombre o telefono para poder devolver una manilla extraviada.
+  nombreVisitante String?
+  notas           String?
+
+  creadaPorId String?
+  creadaPor   Usuario? @relation("ManillaCreadaPor", fields: [creadaPorId], references: [id], onDelete: SetNull)
+
+  recargas Recarga[]
+  usos     Uso[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([estado])
+  @@index([createdAt])
+}
+
+model Recarga {
+  id String @id @default(uuid())
+
+  manillaId String
+  manilla   Manilla @relation(fields: [manillaId], references: [id], onDelete: Cascade)
+
+  puntos Int
+
+  /// Precio unitario vigente al momento de la venta. Se congela aqui para que
+  /// cambiar el precio a futuro no altere los reportes historicos.
+  precioUnitario Decimal @db.Decimal(12, 2)
+  montoTotal     Decimal @db.Decimal(12, 2)
+  moneda         String  @default("COP")
+
+  metodoPago MetodoPago
+  estado     EstadoRecarga @default(CONFIRMADA)
+
+  /// Datos del pago digital. proveedorPago queda listo para "wompi" cuando se
+  /// integre la pasarela; hoy es "manual".
+  proveedorPago  String?
+  referenciaPago String?
+
+  usuarioId String
+  usuario   Usuario @relation("RecargaRegistradaPor", fields: [usuarioId], references: [id])
+
+  confirmadaPorId String?
+  confirmadaPor   Usuario?  @relation("RecargaConfirmadaPor", fields: [confirmadaPorId], references: [id], onDelete: SetNull)
+  confirmadaEn    DateTime?
+
+  anuladaEn     DateTime?
+  motivoAnulado String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([manillaId])
+  @@index([createdAt])
+  @@index([estado])
+  @@index([usuarioId])
+}
+
+model Uso {
+  id String @id @default(uuid())
+
+  manillaId String
+  manilla   Manilla @relation(fields: [manillaId], references: [id], onDelete: Cascade)
+
+  atraccionId String
+  atraccion   Atraccion @relation(fields: [atraccionId], references: [id])
+
+  operadorId String
+  operador   Usuario @relation(fields: [operadorId], references: [id])
+
+  puntosDescontados Int @default(1)
+  saldoAntes        Int
+  saldoDespues      Int
+
+  createdAt DateTime @default(now())
+
+  @@index([manillaId])
+  @@index([atraccionId, createdAt])
+  @@index([createdAt])
+  @@index([operadorId])
+}
+
+/// Configuracion global del negocio. Fila unica con id fijo "singleton".
+model Configuracion {
+  id String @id @default("singleton")
+
+  nombreNegocio String  @default("Mirador")
+  moneda        String  @default("COP")
+
+  /// Precio de un punto. Un punto = un acceso a una atraccion de costo 1.
+  precioPunto Decimal @default(5000) @db.Decimal(12, 2)
+
+  /// Cooldown por defecto para atracciones nuevas.
+  cooldownSegundosDefault Int @default(60)
+
+  /// Datos que recepcion muestra al visitante para el pago digital.
+  pagoDigitalTitular     String?
+  pagoDigitalEntidad     String?
+  pagoDigitalNumero      String?
+  pagoDigitalInstrucciones String?
+
+  /// Cuando la recarga digital exige confirmacion explicita de recepcion.
+  /// Al integrar Wompi esto pasa a false y la pasarela confirma sola.
+  confirmacionDigitalManual Boolean @default(true)
+
+  updatedAt DateTime @updatedAt
+}
+
+/// Bitacora de acciones sensibles (altas, recargas, anulaciones, cambios de
+/// precio, gestion de usuarios). Los usos quedan en la tabla Uso.
+model AuditLog {
+  id String @id @default(uuid())
+
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  accion    String
+  entidad   String
+  entidadId String?
+  detalle   Json?
+  ip        String?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entidad, entidadId])
+  @@index([usuarioId])
+}
